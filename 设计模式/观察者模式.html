@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>观察者模式</title>
+</head>
+
+<body>
+
+</body>
+
+</html>
+<script>
+    //观察者模式
+    function Hanter(options) {
+        this.eventList = [];
+        this.leval = options.leval;
+        this.name = options.name;
+    }
+    Hanter.prototype.publish = function () {
+        this.eventList.forEach((item) => {
+            item()
+        })
+    }
+    Hanter.prototype.subsrcibe = function (target, event) {
+        target.eventList.push(event)
+    }
+
+
+    var hanterMi = new Hanter({ name: 'mi', leval: '200' })
+    var hanterY = new Hanter({ name: 'Y', leval: '200' })
+    var hanterX = new Hanter({ name: 'X', leval: '1' })
+
+    hanterMi.subsrcibe(hanterX, () => {
+        console.log('mi订阅了x');
+    })
+    hanterY.subsrcibe(hanterX, () => {
+        console.log('Y订阅了x');
+    })
+    hanterX.publish()
+
+</script>
