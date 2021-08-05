@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>promise</title>
+</head>
+
+<body>
+
+</body>
+
+</html>
+<script>
+
+    function resolvePromise(promise2, x, resolve, reject) {
+        var then
+        var thenCalledOrThrow = false
+
+        if (promise2 === x) {
+            return reject(new TypeError('Chaining cycle detected for promise!'))
+        }
+
+        if (x instanceof Promise) {
+            if (x.status === 'pending') { //because x could resolved by a Promise Object
+                x.then(function (v) {
+                    resolvePromise(promise2, v, resolve, reject)
+                }, reject)
+            } else { //but if it is resolved, it will never resolved by a Promise Object but a static value;
+                x.then(resolve, reject)
+            }
+            return
+        }
+        if ((x !== null) && ((typeof x === 'object') || (typeof x === 'function'))) {
+            try {
+                then = x.then //because x.then could be a getter
+                if (typeof then === 'function') {
+                    then.call(x, function rs(y) {
+                        if (thenCalledOrThrow) return
+                        thenCalledOrThrow = true
+                        return resolvePromise(promise2, y, resolve, reject)
+                    }, function rj(r) {
+                        if (thenCalledOrThrow) return
+                        thenCalledOrThrow = true
+                        return reject(r)
+                    })
+                } else {
+                    resolve(x)
+                }
+            } catch (e) {
+                if (thenCalledOrThrow) return
+                thenCalledOrThrow = true
+                return reject(e)
+            }
+        } else {
+            resolve(x)
+        }
+    }
+    function MyPromise(Fn) {
+        var _this = this;
+        this.PromiseState = 'pending'
+        this.PromiseResult;
+        this.onFulfilleds = [];
+        this.onRejecteds = [];
+
+        function resolve(val) {
+            if (val instanceof Promise) {
+                return val.then(resolve, reject)
+            }
+            setTimeout(() => {
+                if (_this.PromiseState === 'pending') {
+                    _this.PromiseState = 'fulfilled';
+                    _this.PromiseResult = val;
+                    for (let i = 0; i < _this.onFulfilleds.length; i++) {
+                        _this.onFulfilleds[i](_this.PromiseResult);
+                    }
+                }
+            }, 0);
+
+        }
+        function reject(err) {
+            setTimeout(() => {
+                if (_this.PromiseState === 'pending') {
+                    _this.PromiseState = 'rejected';
+                    _this.PromiseResult = err;
+                    for (let i = 0; i < _this.onFulfilleds.length; i++) {
+                        _this.onFulfilleds[i](_this.PromiseResult);
+                    }
+                }
+            }, 0);
+
+        }
+
+        try {
+            Fn(resolve, reject)
+        } catch (error) {
+            reject(error)
+        }
+    }
+
+    MyPromise.prototype.then = function (onFulfilled, onRejected) {
+        var _this = this;
+        var promise2;
+        onFulfilled = typeof onFulfilled === 'function' ? onFulfilled : function (val) {
+            return val
+        }
+        onRejected = typeof onRejected === 'function' ? onRejected : function (err) {
+            throw err
+        }
+        if (this.PromiseState === 'fulfilled') {
+            return promise2 = new Promise(function (resolve, reject) {
+                setTimeout(() => {
+                    try {
+                        var result = onFulfilled(_this.PromiseResult);
+                        resolvePromise(promise2, result, resolve, reject)
+                    } catch (error) {
+                        reject(error)
+                    }
+                }, 0);
+
+            })
+
+        }
+        if (this.PromiseState === 'rejected') {
+            return promise2 = new Promise(function (resolve, reject) {
+                try {
+                    var result = onRejected(_this.PromiseResult);
+                    resolvePromise(promise2, result, resolve, reject)
+                } catch (error) {
+                    reject(error)
+                }
+            })
+        }
+        if (this.PromiseState === 'pending') {
+            return promise2 = new Promise(function (resolve, reject) {
+                _this.onFulfilleds.push(function () {
+                    try {
+                        var result = onFulfilled(_this.PromiseResult);
+                        resolvePromise(promise2, result, resolve, reject)
+                    } catch (error) {
+                        reject(error)
+                    }
+                })
+                _this.onRejecteds.push(function () {
+                    try {
+                        var result = onRejected(_this.PromiseResult);
+                        resolvePromise(promise2, result, resolve, reject)
+                    } catch (error) {
+                        reject(error)
+                    }
+                })
+            })
+        }
+    }
+    MyPromise.prototype.catch = function (onRejected) {
+        return this.then(null, onRejected)
+    }
+    MyPromise.deferred = MyPromise.defer = function () {
+        var dfd = {}
+        dfd.promise = new Promise(function (resolve, reject) {
+            dfd.resolve = resolve
+            dfd.reject = reject
+        })
+        return dfd
+    }
+
+
+
+    new MyPromise((resolve) => { resolve(99) }).then().catch().then((val) => {
+        console.log(val);
+    })
+</script>
