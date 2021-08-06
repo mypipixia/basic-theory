@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+
+</body>
+
+</html>
+<script>
+    Function.prototype.myCall = function (vm, ...arg) {
+        var newFn = Object.create(vm);
+        newFn.Fn = this;
+        return newFn.Fn()
+
+    }
+
+    function setChange() {
+        console.log(this);
+    }
+
+    // setChange.myCall({ a: 333 })
+
+
+    function setCa(params) {
+        console.log(this);
+    }
+
+    // setCa.call({ a: 333 })
+
+
+    function demo() {
+        this.a = '333'
+    }
+    function create(target) {
+        function Function() {
+        }
+        Function.prototype = target;
+        Function.prototype.constructor = target;
+        return new Function()
+    }
+</script>
